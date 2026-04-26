@@ -1,0 +1,59 @@
+{
+  "name": "example-lambda",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "targets": {
+      "packagejson": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "(rm -r dist || true) && mkdir -p dist && cp package.json.template dist/package.json",
+          "cwd": "{projectRoot}"
+        }
+      },
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "packages/example-lambda/dist",
+          "main": "packages/example-lambda/src/index.ts",
+          "tsConfig": "packages/example-lambda/tsconfig.lib.json",
+          "format": [
+            "cjs",
+            "esm"
+          ],
+          "declarationRootDir": "packages/example-lambda/src",
+          "assets": [
+            {
+              "glob": "src/package.json.bla",
+              "input": "./packages/example-lambda/",
+              "output": "."
+            }
+          ],
+          "deleteOutputPath": false
+        },
+        "dependsOn": [
+          "packagejson"
+        ]
+      }
+    }
+  },
+  "dependencies": {
+    "example-shared": "workspace:*",
+    "stepfunctor-lang": "workspace:*"
+  }
+}

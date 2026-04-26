@@ -1,0 +1,80 @@
+{
+  "/myStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/myStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/myStack/start-lambda/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "startlambda5B4B890B"
+    }
+  ],
+  "/myStack/loop-lambda/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "looplambda7A025230"
+    }
+  ],
+  "/myStack/cont-lambda/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "contlambdaCBEEDB63"
+    }
+  ],
+  "/myStack/MyStepFunction/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "MyStepFunction25667C23"
+    }
+  ],
+  "/myStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/myStack/CDKMetadata/Condition": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadataAvailable"
+    }
+  ],
+  "/myStack/start-lambda/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "startlambdaServiceRoleF5F09B59"
+    }
+  ],
+  "/myStack/loop-lambda/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "looplambdaServiceRoleDBBFC2BC"
+    }
+  ],
+  "/myStack/cont-lambda/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "contlambdaServiceRole739CC901"
+    }
+  ],
+  "/myStack/MyStepFunction/Role/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "MyStepFunctionRole487C681B"
+    }
+  ],
+  "/myStack/MyStepFunction/Role/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "MyStepFunctionRoleDefaultPolicy63A82B2E"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["node"],
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
+    "emitDeclarationOnly": false,
+    "composite": true,
+    "declarationMap": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [],
+  "references": [
+    {
+      "path": "../../packages/stepfunctor-infra/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/example-shared/tsconfig.lib.json"
+    }
+  ]
+}

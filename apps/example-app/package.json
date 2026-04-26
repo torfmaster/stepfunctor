@@ -1,0 +1,102 @@
+{
+  "name": "example-app",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "example-lambda"
+    ],
+    "targets": {
+      "deploy": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "cdk deploy",
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/example-app/dist",
+          "format": [
+            "cjs"
+          ],
+          "bundle": true,
+          "main": "apps/example-app/src/main.ts",
+          "tsConfig": "apps/example-app/tsconfig.app.json",
+          "assets": [
+            "apps/example-app/src/assets"
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "prune-lockfile": {
+        "dependsOn": [
+          "build"
+        ],
+        "cache": true,
+        "executor": "@nx/js:prune-lockfile",
+        "outputs": [
+          "{workspaceRoot}/apps/example-app/dist/package.json",
+          "{workspaceRoot}/apps/example-app/dist/pnpm-lock.yaml"
+        ],
+        "options": {
+          "buildTarget": "build"
+        }
+      },
+      "copy-workspace-modules": {
+        "dependsOn": [
+          "build"
+        ],
+        "cache": true,
+        "outputs": [
+          "{workspaceRoot}/apps/example-app/dist/workspace_modules"
+        ],
+        "executor": "@nx/js:copy-workspace-modules",
+        "options": {
+          "buildTarget": "build"
+        }
+      },
+      "prune": {
+        "dependsOn": [
+          "prune-lockfile",
+          "copy-workspace-modules"
+        ],
+        "executor": "nx:noop"
+      }
+    }
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.250.0",
+    "constructs": "^10.6.0",
+    "example-shared": "workspace:*",
+    "stepfunctor-infra": "workspace:*"
+  },
+  "devDependencies": {
+    "cdk": "^2.1119.0"
+  }
+}

@@ -11,6 +11,15 @@
     },
     {
       "path": "./packages/stepfunctor-infra"
+    },
+    {
+      "path": "./apps/example-app"
+    },
+    {
+      "path": "./packages/example-shared"
+    },
+    {
+      "path": "./packages/example-lambda"
     }
   ]
 }

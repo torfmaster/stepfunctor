@@ -1,11 +1,21 @@
-
 // Interpreter
 
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { Duration } from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
-import { Chain, Choice, Condition, Wait, WaitTime } from 'aws-cdk-lib/aws-stepfunctions';
+import {
+  Chain,
+  Choice,
+  Condition,
+  Pass,
+  Result,
+  StateMachine,
+  Succeed,
+  TaskInput,
+  Wait,
+  WaitTime,
+} from 'aws-cdk-lib/aws-stepfunctions';
 import {
   Func,
   isFunc,
@@ -16,6 +26,7 @@ import {
   isSwitchCase3,
   StepFunction,
   assertExhausted,
+  isFinal,
 } from 'stepfunctor-lang';
 
 export type CdkExecutionContext = {
@@ -32,17 +43,26 @@ function buildLambda<IN, LS>(
   fn: Func<IN, LS>,
   context: CdkExecutionContext,
 ): Ret<LS> {
-  const lambdaFunction = new Function(context.scope, fn.uniqueIdentifier, {
-    runtime: Runtime.NODEJS_22_X,
-    handler: `${context.moduleName}.${fn.uniqueIdentifier}`,
-    code: Code.fromAsset(context.artifactPath),
-  });
+  const lambdaFunction = new Function(
+    context.scope,
+    `${fn.uniqueIdentifier}-lambda`,
+    {
+      runtime: Runtime.NODEJS_22_X,
+      handler: `${context.moduleName}.${fn.uniqueIdentifier}`,
+      code: Code.fromAsset(context.artifactPath),
+    },
+  );
   const m: { [key: string]: Function } = {};
   m[fn.uniqueIdentifier] = lambdaFunction;
   return {
-    lambdaInvoke: new LambdaInvoke(context.scope, fn.uniqueIdentifier, {
-      lambdaFunction: lambdaFunction,
-    }),
+    lambdaInvoke: new LambdaInvoke(
+      context.scope,
+      `${fn.uniqueIdentifier}-invoke`,
+      {
+        lambdaFunction: lambdaFunction,
+        payload: TaskInput.fromJsonPathAt('$.Payload'),
+      },
+    ),
     lambdas: m as { [key in keyof LS]: Function },
   };
 }
@@ -81,7 +101,7 @@ function buildStepFunctionInner<I, LS>(
     const condition = buildLambda(f, context);
     const sfTrue = buildStepFunctionInner(restTrue, context);
     const sfFalse = buildStepFunctionInner(restFalse, context);
-    const choice = new Choice(context.scope, 'Condition')
+    const choice = new Choice(context.scope, `${sf.id}-choice`)
       .when(Condition.booleanEquals('$.condition', true), sfTrue.chain)
       .otherwise(sfFalse.chain);
     const composition = condition.lambdaInvoke.next(choice);
@@ -104,16 +124,26 @@ function buildStepFunctionInner<I, LS>(
       context,
     );
 
-    const wait = new Wait(context.scope, `Wait 10 minutes`, {
+    const wait = new Wait(context.scope, `${sf.id}-wait`, {
       time: WaitTime.duration(Duration.seconds(durationSeconds)),
+    });
+
+    const transformer = new Pass(context.scope, `${sf.id}-pass`, {
+      inputPath: '$.Payload.output',
+      result: Result.fromObject({
+        Payload: Result.fromObject({}),
+      }),
+      resultPath: '$.Payload',
     });
 
     const conditionChain = Chain.start(condition.lambdaInvoke);
     conditionChain.next(
-      new Choice(context.scope, 'Condition')
+      // fixme generate id
+      new Choice(context.scope, `${sf.id}-condition`)
+        // fixme map payload to match types
         .when(
-          Condition.booleanEquals('$.condition', true),
-          continuationStepFunction.chain,
+          Condition.isPresent('$.Payload.output'),
+          transformer.next(continuationStepFunction.chain),
         )
         .otherwise(wait.next(conditionChain)),
     );
@@ -155,7 +185,7 @@ function buildStepFunctionInner<I, LS>(
     const case2Sf = buildStepFunctionInner(case2, context);
     const case3Sf = buildStepFunctionInner(case3, context);
 
-    const choice = new Choice(context.scope, 'SwitchCase')
+    const choice = new Choice(context.scope, `${sf.id}-choice`)
       .when(
         Condition.stringEquals('$.characteristic', case1Name),
         case1Sf.chain,
@@ -177,7 +207,14 @@ function buildStepFunctionInner<I, LS>(
       lambdas: combinedLambdas as Utility<LS, Function>,
     };
   }
- 
+
+  if (isFinal(sf)) {
+    return {
+      chain: Chain.start(new Succeed(context.scope, sf.id)),
+      lambdas: {} as Utility<LS, Function>,
+    };
+  }
+
   assertExhausted(sf);
 }
 
@@ -186,6 +223,11 @@ export type PublicReturn<LS> = { lambdas: { [key in keyof LS]: Function } };
 export function buildStepFunctionConstruct<I, LS>(
   sf: StepFunction<I, LS>,
   context: CdkExecutionContext,
+  id: string,
 ): PublicReturn<LS> {
-  return buildStepFunctionInner(sf, context);
+  const chain = buildStepFunctionInner(sf, context);
+  new StateMachine(context.scope, id, {
+    definition: chain.chain,
+  });
+  return chain;
 }

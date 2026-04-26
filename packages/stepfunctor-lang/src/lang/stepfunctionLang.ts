@@ -1,7 +1,31 @@
-import {
-  assertExhausted,
-  isOfType,
-} from '../utils/typeUtils.js';
+import { assertExhausted, isOfType } from '../utils/typeUtils.js';
+
+type PhantomType<T> = { [P in keyof T]: undefined };
+
+// Type marker: Do not export the symbol, this destroys type safety
+// Has to be a string iff the error is directly serialized (e.g. for the frontend)
+const finalMarker: unique symbol = Symbol();
+export type Final<IN, LS> = {
+  type: typeof finalMarker;
+  lambdas: PhantomType<LS>;
+  id: string;
+};
+
+export function isFinal<I, LS>(
+  input: StepFunction<I, LS>,
+): input is Final<I, LS> {
+  return isOfType(input, finalMarker);
+}
+function mkFinal<IN, LS>(id: string): Final<IN, LS> {
+  const lambdas = {} as PhantomType<LS>;
+  return {
+    type: finalMarker,
+    lambdas,
+    id,
+  };
+}
+
+export const final = mkFinal;
 
 // Type marker: Do not export the symbol, this destroys type safety
 // Has to be a string iff the error is directly serialized (e.g. for the frontend)
@@ -10,7 +34,7 @@ export type Func<IN, LS> = {
   type: typeof funcMarker;
   inner: (i: IN) => Promise<unknown>;
   uniqueIdentifier: string;
-  lambdas: LS;
+  lambdas: PhantomType<LS>;
 };
 
 export function isFunc<I, LS>(
@@ -19,12 +43,10 @@ export function isFunc<I, LS>(
   return isOfType(input, funcMarker);
 }
 function mkFunc<IN, OUT, LS>(
-  uniqueIdentifier: keyof LS&string,
+  uniqueIdentifier: keyof LS & string,
   inner: (i: IN) => Promise<OUT>,
 ): Func<IN, LS> {
-  // FIXME:
-  const lambdas = {} as LS;
-  // @ts-expect-error: this is a phantom only used for key tracking
+  const lambdas = {} as PhantomType<LS>;
   lambdas[uniqueIdentifier] = undefined;
   return {
     type: funcMarker,
@@ -35,7 +57,7 @@ function mkFunc<IN, OUT, LS>(
 }
 
 function exportHere<I, LS>(f: Func<I, LS>, m: NodeJS.Module): void {
-  m.exports[f.uniqueIdentifier] = f;
+  m.exports[f.uniqueIdentifier] = f.inner;
 }
 
 // Type marker: Do not export the symbol, this destroys type safety
@@ -46,7 +68,7 @@ export type Rest<IN, LS> = {
   // what do we put here?
   f: Func<IN, unknown>;
   rest: StepFunction<unknown, unknown>;
-  lambdas: LS;
+  lambdas: PhantomType<LS>;
 };
 export function isRest<I, LS>(
   input: StepFunction<I, LS>,
@@ -56,7 +78,7 @@ export function isRest<I, LS>(
 function mkRest<IN, IN1, LS1, LS2>(
   f: Func<IN, LS1>,
   rest: StepFunction<IN1, LS2>,
-  lambdas: LS1 & LS2,
+  lambdas: PhantomType<LS1 & LS2>,
 ): Rest<IN, LS1 & LS2> {
   return {
     type: restMarker,
@@ -74,7 +96,8 @@ export type IfThenElse<IN, LS> = {
   f: Func<IN, unknown>;
   case1: StepFunction<unknown, unknown>;
   case2: StepFunction<unknown, unknown>;
-  lambdas: LS;
+  lambdas: PhantomType<LS>;
+  id: string;
 };
 export function isIfThenElse<I, LS>(
   input: StepFunction<I, LS>,
@@ -85,6 +108,7 @@ function mkIfThenElse<IN, IN1, IN2, LS1, LS2, LS3>(
   f: Func<IN, LS1>,
   restTrue: StepFunction<IN1, LS2>,
   restFalse: StepFunction<IN2, LS3>,
+  id: string,
 ): IfThenElse<IN, LS1 & LS2 & LS3> {
   return {
     type: ifThenElseMarker,
@@ -92,6 +116,7 @@ function mkIfThenElse<IN, IN1, IN2, LS1, LS2, LS3>(
     case1: restTrue as StepFunction<unknown, unknown>,
     case2: restFalse as StepFunction<unknown, unknown>,
     lambdas: { ...f.lambdas, ...restTrue.lambdas, ...restFalse.lambdas },
+    id,
   };
 }
 
@@ -103,9 +128,10 @@ export type SwitchCase2<IN, LS> = {
   f: Func<IN, unknown>;
   case1: StepFunction<unknown, unknown>;
   case2: StepFunction<unknown, unknown>;
-  lambdas: LS;
+  lambdas: PhantomType<LS>;
   case1Name: string;
   case2Name: string;
+  id: string;
 };
 export function isSwitchCase2<I, LS>(
   input: StepFunction<I, LS>,
@@ -118,6 +144,7 @@ function mkSwitchCase2<IN, IN1, IN2, LS1, LS2, LS3>(
   case2: StepFunction<IN2, LS3>,
   case1Name: string,
   case2Name: string,
+  id: string,
 ): SwitchCase2<IN, LS1 & LS2 & LS3> {
   return {
     type: switchCase2Marker,
@@ -127,6 +154,7 @@ function mkSwitchCase2<IN, IN1, IN2, LS1, LS2, LS3>(
     case1Name,
     case2Name,
     lambdas: { ...f.lambdas, ...case1.lambdas, ...case2.lambdas },
+    id,
   };
 }
 
@@ -139,10 +167,11 @@ export type SwitchCase3<IN, LS> = {
   case1: StepFunction<unknown, unknown>;
   case2: StepFunction<unknown, unknown>;
   case3: StepFunction<unknown, unknown>;
-  lambdas: LS;
+  lambdas: PhantomType<LS>;
   case1Name: string;
   case2Name: string;
   case3Name: string;
+  id: string;
 };
 export function isSwitchCase3<I, LS>(
   input: StepFunction<I, LS>,
@@ -157,6 +186,7 @@ function mkSwitchCase3<IN, IN1, IN2, IN3, LS1, LS2, LS3, LS4>(
   case1Name: string,
   case2Name: string,
   case3Name: string,
+  id: string,
 ): SwitchCase3<IN, LS1 & LS2 & LS3 & LS4> {
   return {
     type: switchCase3Marker,
@@ -173,6 +203,7 @@ function mkSwitchCase3<IN, IN1, IN2, IN3, LS1, LS2, LS3, LS4>(
       ...case2.lambdas,
       ...case3.lambdas,
     },
+    id,
   };
 }
 
@@ -184,7 +215,8 @@ export type LoopWhile<IN, LS> = {
   f: Func<IN, unknown>;
   continuation: StepFunction<unknown, unknown>;
   durationSeconds: number;
-  lambdas: LS;
+  lambdas: PhantomType<LS>;
+  id: string;
 };
 
 export function isLoopWhile<I, LS>(
@@ -196,6 +228,7 @@ function mkLoopWhile<IN, CONTIN, LS, LSCONT>(
   f: Func<IN, LS>,
   continuation: StepFunction<CONTIN, LSCONT>,
   durationSeconds: number,
+  id: string,
 ): LoopWhile<IN, LS & LSCONT> {
   return {
     type: loopWhileMarker,
@@ -203,6 +236,7 @@ function mkLoopWhile<IN, CONTIN, LS, LSCONT>(
     continuation: continuation as StepFunction<unknown, unknown>,
     durationSeconds,
     lambdas: { ...f.lambdas, ...continuation.lambdas },
+    id,
   };
 }
 
@@ -212,7 +246,8 @@ export type StepFunction<I, LS> =
   | IfThenElse<I, LS>
   | LoopWhile<I, LS>
   | SwitchCase2<I, LS>
-  | SwitchCase3<I, LS>;
+  | SwitchCase3<I, LS>
+  | Final<I, LS>;
 
 // Todo:
 // - LoopWhile
@@ -270,13 +305,17 @@ export function exportStepFunction<I, LS>(
     return;
   }
 
+  if (isFinal(sf)) {
+    return;
+  }
+
   assertExhausted(sf);
 }
 
 export const createFunction = mkFunc;
 
 export function prepend<FIN, RESTIN, LSF, LSREST>(
-  fnUniqueIdentifier: keyof LSF&string,
+  fnUniqueIdentifier: keyof LSF & string,
   f: (i: FIN) => Promise<RESTIN>,
   rest: StepFunction<RESTIN, LSREST>,
 ): StepFunction<FIN, LSF & LSREST> {
@@ -287,22 +326,22 @@ export function prepend<FIN, RESTIN, LSF, LSREST>(
 
 export function ifThenElse<FIN, RESTIN, LSF, LS1, LS2>(
   f: (i: FIN) => Promise<RESTIN & { condition: boolean }>,
-  fnUniqueIdentifier: keyof LSF&string,
+  fnUniqueIdentifier: keyof LSF & string,
   restTrue: StepFunction<RESTIN, LS1>,
   restFalse: StepFunction<RESTIN, LS2>,
 ): StepFunction<FIN, LSF & LS1 & LS2> {
   const func = mkFunc(fnUniqueIdentifier, f);
-  return mkIfThenElse(func, restTrue, restFalse);
+  return mkIfThenElse(func, restTrue, restFalse, fnUniqueIdentifier);
 }
 
 export function loopWhile<FIN, CONTIN, LSF, LSC>(
-  f: (i: FIN) => Promise<CONTIN & { condition: boolean }>,
-  fnUniqueIdentifier: keyof LSF&string,
+  f: (i: FIN) => Promise<FIN & { output?: CONTIN }>,
+  fnUniqueIdentifier: keyof LSF & string,
   continuation: StepFunction<CONTIN, LSC>,
   durationSeconds: number,
 ): StepFunction<FIN, LSF & LSC> {
   const func = mkFunc(fnUniqueIdentifier, f);
-  return mkLoopWhile(func, continuation, durationSeconds);
+  return mkLoopWhile(func, continuation, durationSeconds, fnUniqueIdentifier);
 }
 
 export function switchCase2<
@@ -315,15 +354,21 @@ export function switchCase2<
   CASE2 extends string,
 >(
   f: (i: FIN) => Promise<CASEIN & { characteristic: CASE1 | CASE2 }>,
-  fnUniqueIdentifier: keyof LSF&string,
+  fnUniqueIdentifier: keyof LSF & string,
   case1: StepFunction<CASEIN, LS1>,
   case2: StepFunction<CASEIN, LS2>,
   case1Name: CASE1,
   case2Name: CASE2,
 ): StepFunction<FIN, LSF & LS1 & LS2> {
   const func = mkFunc(fnUniqueIdentifier, f);
-  // FIXME: find a better to model the cases
-  return mkSwitchCase2(func, case1, case2, case1Name, case2Name);
+  return mkSwitchCase2(
+    func,
+    case1,
+    case2,
+    case1Name,
+    case2Name,
+    fnUniqueIdentifier,
+  );
 }
 
 export function switchCase3<
@@ -338,7 +383,7 @@ export function switchCase3<
   CASE3 extends string,
 >(
   f: (i: FIN) => Promise<CASEIN & { characteristic: CASE1 | CASE2 }>,
-  fnUniqueIdentifier: keyof LSF&string,
+  fnUniqueIdentifier: keyof LSF & string,
   case1: StepFunction<CASEIN, LS1>,
   case2: StepFunction<CASEIN, LS2>,
   case3: StepFunction<CASEIN, LS3>,
@@ -347,7 +392,6 @@ export function switchCase3<
   case3Name: CASE3,
 ): StepFunction<FIN, LSF & LS1 & LS2 & LS3> {
   const func = mkFunc(fnUniqueIdentifier, f);
-  // FIXME: find a better to model the cases
   return mkSwitchCase3(
     func,
     case1,
@@ -356,5 +400,6 @@ export function switchCase3<
     case1Name,
     case2Name,
     case3Name,
+    fnUniqueIdentifier,
   );
 }
