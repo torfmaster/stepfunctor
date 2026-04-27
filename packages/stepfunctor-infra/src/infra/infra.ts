@@ -67,8 +67,7 @@ function buildLambda<IN, LS>(
   };
 }
 
-// FIXME: the next two types deserve a better name
-type Utility<LS, F> = { [key in keyof LS]: F };
+type JSMap<LS, F> = { [key in keyof LS]: F };
 
 type Return<LS> = {
   chain: Chain;
@@ -112,7 +111,7 @@ function buildStepFunctionInner<I, LS>(
     };
     return {
       chain: composition,
-      lambdas: combinedLambdas as Utility<LS, Function>,
+      lambdas: combinedLambdas as JSMap<LS, Function>,
     };
   }
 
@@ -151,7 +150,7 @@ function buildStepFunctionInner<I, LS>(
       ...continuationStepFunction.lambdas,
       ...condition.lambdas,
     };
-    return { chain: conditionChain, lambdas: lambdas as Utility<LS, Function> };
+    return { chain: conditionChain, lambdas: lambdas as JSMap<LS, Function> };
   }
 
   if (isSwitchCase2(sf)) {
@@ -174,7 +173,7 @@ function buildStepFunctionInner<I, LS>(
     };
     return {
       chain: composition,
-      lambdas: combinedLambdas as Utility<LS, Function>,
+      lambdas: combinedLambdas as JSMap<LS, Function>,
     };
   }
 
@@ -204,14 +203,14 @@ function buildStepFunctionInner<I, LS>(
     };
     return {
       chain: composition,
-      lambdas: combinedLambdas as Utility<LS, Function>,
+      lambdas: combinedLambdas as JSMap<LS, Function>,
     };
   }
 
   if (isFinal(sf)) {
     return {
       chain: Chain.start(new Succeed(context.scope, sf.id)),
-      lambdas: {} as Utility<LS, Function>,
+      lambdas: {} as JSMap<LS, Function>,
     };
   }
 
