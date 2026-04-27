@@ -1,109 +1,103 @@
-# Org
+# Stepfunctor
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A typed, highly opinionated wrapper about the CDK AwS Step Functions that wants to make
+writing step functions as easy as Typescript functions.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Goals
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/js?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+At a high level this library tries to bridge the gap between AWS Lambda (run time max. 15 minutes) and AWS Batch
+(heavy weight service). If you ever have tried to just quickly deploy a longer running Typescript function as
+a Step Functors you might have encountered the following issues
 
-## Generate a library
+- AWS Step Functions have a lot of specialized features, too many to understand them all at once
+- basic things like loops are not implemented at all
+- the interface between is untyped and adapted using json path
+- in particular passing state between tasks is hard: it has to be passed as an argument, yet there
+  is no way to type the state
+- for the unexperienced user it is very likely that compiling code fails during deploy time
 
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
+## Non-Goals
+
+- implement all step function features, in particular implement special steps that can be easily implemented as a
+  Lambda task
+- handle cyclic operations (any application can be and is modelled tree-like)
+
+## Example
+
+A full example is implemented in the `example-` pachages. We present the essentials here:
+
+First define your step function:
+
+```typescript
+import { final, loopWhile, prepend } from 'stepfunctor-lang';
+
+async function start() {
+  return { s: 'Hello, world!' };
+}
+
+async function loop(input: {
+  s: string;
+}): Promise<{ s: string; output?: { s: string } }> {
+  return {
+    s: input.s.substring(0, input.s.length - 1),
+    output: input.s.length > 1 ? undefined : { s: input.s },
+  };
+}
+
+async function cont(_: { s: string }): Promise<void> {
+  console.log('done');
+}
+
+const loopSf = loopWhile(
+  loop,
+  'loop',
+  prepend('cont', cont, final('Done!')),
+  5,
+);
+
+export const sf = prepend('start', start, loopSf);
 ```
 
-## Run tasks
+THen export the handler functions in your npm package for the lambda code
 
-To build the library use:
+```typescript
+import { sf } from 'example-shared';
+import { exportStepFunction } from 'stepfunctor-lang';
 
-```sh
-npx nx build pkg1
+exportStepFunction(sf, module);
 ```
 
-To run any task with Nx use:
+Finally, build your cdk app to deploy the infrastructure:
 
-```sh
-npx nx <target> <project-name>
+```typescript
+import { App, Stack } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { sf } from 'example-shared';
+import path from 'path';
+import { buildStepFunctionConstruct } from 'stepfunctor-infra';
+
+class ExampleStack extends Stack {
+  constructor(scope: Construct) {
+    super(scope, 'myStack');
+    buildStepFunctionConstruct(
+      sf,
+      {
+        moduleName: 'index',
+        artifactPath: path.join(
+          __dirname,
+          '../../../packages/example-lambda/dist/',
+        ),
+        scope: this,
+      },
+      'MyStepFunction',
+    );
+  }
+}
+
+const app = new App();
+new ExampleStack(app);
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+The result will look like this:
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Versioning and releasing
-
-To version and release the library use
-
-```
-npx nx release
-```
-
-Pass `--dry-run` to see what would happen without actually releasing the library.
-
-[Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Keep TypeScript project references up to date
-
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
-
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
-
-```sh
-npx nx sync
-```
-
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
-
-```sh
-npx nx sync:check
-```
-
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/nx-api/js?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+![image](./example.png)
