@@ -101,3 +101,7 @@ new ExampleStack(app);
 The result will look like this:
 
 ![image](./example.png)
+
+## License
+
+This project is licensed under Apache 2.0 or MIT license.
