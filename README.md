@@ -102,6 +102,10 @@ The result will look like this:
 
 ![image](./example.png)
 
+Do your lambdas need more permissions? Nothing is easier than that:
+
+![video](./autoCompletion.gif)
+
 ## License
 
 This project is licensed under Apache 2.0 or MIT license.
