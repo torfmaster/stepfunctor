@@ -54,6 +54,6 @@
   },
   "dependencies": {
     "example-shared": "workspace:*",
-    "stepfunctor-lang": "workspace:*"
+    "stepfunctor-exec": "workspace:*"
   }
 }

@@ -1,0 +1,25 @@
+name: Run Tests
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  cache-and-install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          version: 10
+          cache: true
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpx nx run-many -t test

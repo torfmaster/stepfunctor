@@ -114,9 +114,9 @@ importers:
       example-shared:
         specifier: workspace:*
         version: link:../example-shared
-      stepfunctor-lang:
+      stepfunctor-exec:
         specifier: workspace:*
-        version: link:../stepfunctor-lang
+        version: link:../stepfunctor-exec
 
   packages/example-shared:
     dependencies:
@@ -126,6 +126,10 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+    devDependencies:
+      '@types/jest':
+        specifier: ^30.0.0
+        version: 30.0.0
 
   packages/stepfunctor-exec:
     dependencies:

@@ -7,6 +7,7 @@ async function start() {
 async function loop(input: {
   s: string;
 }): Promise<{ s: string; output?: { s: string } }> {
+  console.log(input.s);
   return {
     s: input.s.substring(0, input.s.length - 1),
     output: input.s.length > 1 ? undefined : { s: input.s },

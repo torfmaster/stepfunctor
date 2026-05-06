@@ -10,9 +10,15 @@
     "declarationMap": false
   },
   "include": ["src/**/*.ts"],
+  "exclude": [
+    "jest.config.ts",
+    "jest.config.cts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
+  ],
   "references": [
     {
-      "path": "../stepfunctor-lang/tsconfig.lib.json"
+      "path": "../stepfunctor-exec/tsconfig.lib.json"
     },
     {
       "path": "../example-shared/tsconfig.lib.json"

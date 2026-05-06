@@ -1,4 +1,4 @@
-import { assertExhausted, isOfType } from '../utils/typeUtils.js';
+import { isOfType } from '../utils/typeUtils.js';
 
 type PhantomType<T> = { [P in keyof T]: undefined };
 
@@ -54,10 +54,6 @@ function mkFunc<IN, OUT, LS>(
     uniqueIdentifier,
     lambdas,
   };
-}
-
-function exportHere<I, LS>(f: Func<I, LS>, m: NodeJS.Module): void {
-  m.exports[f.uniqueIdentifier] = f.inner;
 }
 
 // Type marker: Do not export the symbol, this destroys type safety
@@ -248,69 +244,6 @@ export type StepFunction<I, LS> =
   | SwitchCase2<I, LS>
   | SwitchCase3<I, LS>
   | Final<I, LS>;
-
-// Todo:
-// - LoopWhile
-// - switch case for enums
-// - possiblity to amend permissions of lambdas
-// - async support
-
-// Public API
-
-export function exportStepFunction<I, LS>(
-  sf: StepFunction<I, LS>,
-  m: NodeJS.Module,
-): void {
-  if (isFunc<I, LS>(sf)) {
-    exportHere(sf, m);
-    return;
-  }
-
-  if (isRest<I, LS>(sf)) {
-    const { f, rest } = sf;
-    exportHere(f, m);
-    exportStepFunction(rest, m);
-    return;
-  }
-
-  if (isIfThenElse<I, LS>(sf)) {
-    const { f, case1, case2 } = sf;
-    exportHere(f, m);
-    exportStepFunction(case1, m);
-    exportStepFunction(case2, m);
-    return;
-  }
-
-  if (isLoopWhile<I, LS>(sf)) {
-    const { f, continuation } = sf;
-    exportHere(f, m);
-    exportStepFunction(continuation, m);
-    return;
-  }
-
-  if (isSwitchCase2<I, LS>(sf)) {
-    const { f, case1, case2 } = sf;
-    exportHere(f, m);
-    exportStepFunction(case1, m);
-    exportStepFunction(case2, m);
-    return;
-  }
-
-  if (isSwitchCase3<I, LS>(sf)) {
-    const { f, case1, case2, case3 } = sf;
-    exportHere(f, m);
-    exportStepFunction(case1, m);
-    exportStepFunction(case2, m);
-    exportStepFunction(case3, m);
-    return;
-  }
-
-  if (isFinal(sf)) {
-    return;
-  }
-
-  assertExhausted(sf);
-}
 
 export const createFunction = mkFunc;
 

@@ -68,3 +68,74 @@ export function exportStepFunction<I, LS>(
 
   assertExhausted(sf);
 }
+
+export async function runStepFunction<I, LS>(
+  sf: StepFunction<I, LS>,
+  input: I,
+): Promise<unknown> {
+  if (isFunc<I, LS>(sf)) {
+    return sf.inner(input);
+  }
+
+  if (isRest<I, LS>(sf)) {
+    const { f, rest } = sf;
+    const out = await f.inner(input);
+    return runStepFunction(rest, out);
+  }
+
+  if (isIfThenElse<I, LS>(sf)) {
+    const { f, case1, case2 } = sf;
+    const out = (await f.inner(input)) as { condition: boolean };
+
+    if (out.condition) {
+      return runStepFunction(case1, out);
+    } else {
+      return runStepFunction(case2, out);
+    }
+  }
+
+  if (isLoopWhile<I, LS>(sf)) {
+    const { f, continuation } = sf;
+    let nextInput = input;
+    while (true) {
+      const out = (await f.inner(nextInput)) as { output: unknown };
+      if (out.output !== undefined) {
+        return runStepFunction(continuation, out.output);
+      }
+      nextInput = out as I;
+    }
+  }
+
+  if (isSwitchCase2<I, LS>(sf)) {
+    const { f, case1, case2, case1Name, case2Name } = sf;
+    const out = (await f.inner(input)) as { characteristic: string };
+    if (out.characteristic === case1Name) {
+      return runStepFunction(case1, out);
+    }
+    if (out.characteristic === case2Name) {
+      return runStepFunction(case2, out);
+    }
+    throw new Error('Unreachable');
+  }
+
+  if (isSwitchCase3<I, LS>(sf)) {
+    const { f, case1, case2, case3, case1Name, case2Name, case3Name } = sf;
+    const out = (await f.inner(input)) as { characteristic: string };
+    if (out.characteristic === case1Name) {
+      return runStepFunction(case1, out);
+    }
+    if (out.characteristic === case2Name) {
+      return runStepFunction(case2, out);
+    }
+    if (out.characteristic === case3Name) {
+      return runStepFunction(case3, out);
+    }
+    throw new Error('Unreachable');
+  }
+
+  if (isFinal(sf)) {
+    return;
+  }
+
+  assertExhausted(sf);
+}

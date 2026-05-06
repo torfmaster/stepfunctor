@@ -7,7 +7,7 @@ import { buildStepFunctionConstruct } from 'stepfunctor-infra';
 class ExampleStack extends Stack {
   constructor(scope: Construct) {
     super(scope, 'myStack');
-    const stepFunction = buildStepFunctionConstruct(
+    buildStepFunctionConstruct(
       sf,
       {
         moduleName: 'index',
