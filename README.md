@@ -24,7 +24,7 @@ a Step Functors you might have encountered the following issues
 
 ## Example
 
-A full example is implemented in the `example-` pachages. We present the essentials here:
+A full example is implemented in the `example-` packages. We present the essentials here:
 
 First define your step function:
 
@@ -105,6 +105,131 @@ The result will look like this:
 Do your lambdas need more permissions? Nothing is easier than that:
 
 ![video](./autoCompletion.gif)
+
+## Getting Started
+
+### Basic Concepts
+
+The `stepfunctor` package consists of three components.
+
+**The language**: The (domain specific) language of step functions is defined by the `stepfunctor-lang` package: It
+defines the primitives of step functions
+
+- functions (and their compositions)
+- loops
+- if expressions
+- case expressions
+
+**The lambda artifacts**: This is defined by the `stepfunctor-exec` package. It creates the right javascript artifacts
+that can later be referred to by cdk.
+
+**The infrastructure**: This is defined by the `stepfunctor-infra` package. It defines the cdk constructs that
+actually deploy the step function to AWS.
+
+### Set up package structure
+
+**Meta observation**: We recommend using a monorepo structure like this repository using a monorepo wrapper like `nx`. This
+gives you fine grained controlled over all your artifacts without relying on implicit behavior of `cdk`
+(like bundling, executing using `ts-node`).
+
+**Define your step function**: We recommend to define and export your step function in a package `example-shared`.
+The most basic step function looks as follows:
+
+```typescript
+import { final, prepend } from 'stepfunctor-lang';
+
+export const stepFunction = prepend(
+  'name',
+  async () => {
+    console.log('Hello, world!');
+  },
+  final('Done!'),
+);
+```
+
+It just logs "Hello, world!" and then succeeds.
+
+**Test the step function locally**
+
+You can test the execution of your step function locally:
+
+```typescript
+import { sf } from 'example-shared';
+import { runStepFunction } from 'stepfunctor-exec';
+
+describe('test execution of step function', () => {
+  it('works', async () => {
+    await runStepFunction(sf, {});
+  });
+});
+```
+
+**Create the javascript artifacts**:
+
+Create a commonjs package `example-lambda` and in your entry point do the following:
+
+```typescript
+import { sf } from 'example-shared';
+import { exportStepFunction } from 'stepfunctor-exec';
+
+exportStepFunction(sf, module);
+```
+
+**Deploy the step function in your cdk app**:
+
+We recommend (in general but in special in this case) the setup from `apps/example-app`:
+
+- a cdk app that is compiled to a static js bundle using `webpack` or another bundler
+- executing this cdk app using the following `cdk.json`
+
+```json
+{
+  "app": "node dist/main.js"
+}
+```
+
+You can now easily deploy your code
+
+```typescript
+import { App, Stack } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { sf } from 'example-shared';
+import path from 'path';
+import { buildStepFunctionConstruct } from 'stepfunctor-infra';
+
+class ExampleStack extends Stack {
+  constructor(scope: Construct) {
+    super(scope, 'myStack');
+    buildStepFunctionConstruct(
+      sf,
+      {
+        moduleName: 'index',
+        artifactPath: path.join(
+          __dirname,
+          '../../../packages/example-lambda/dist/',
+        ),
+        scope: this,
+      },
+      'MyStepFunction',
+    );
+  }
+}
+
+const app = new App();
+new ExampleStack(app);
+```
+
+Note that the `artifactPath` depends on the relative location of your artifacts. Also note
+that you now have an implicit dependency between the packages `example-app` and
+`example-lambda`.
+
+You now can run
+
+```bash
+pnpx nx run-many -t build
+cd apps/example-app
+cdk deploy
+```
 
 ## License
 
