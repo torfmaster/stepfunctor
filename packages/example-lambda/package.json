@@ -47,7 +47,8 @@
           "deleteOutputPath": false
         },
         "dependsOn": [
-          "packagejson"
+          "packagejson",
+          "^build"
         ]
       }
     }
