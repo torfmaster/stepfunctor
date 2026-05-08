@@ -5,6 +5,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "url": "https://github.com/torfmaster/stepfunctor"
+  },
   "exports": {
     "./package.json": "./package.json",
     ".": {
