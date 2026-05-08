@@ -1,3 +1,18 @@
+## 0.0.4 (2026-05-08)
+
+### 🚀 Features
+
+- setup publishing to npm ([1025d4d](https://github.com/torfmaster/stepfunctor/commit/1025d4d))
+
+### 🩹 Fixes
+
+- add repository url ([77d818b](https://github.com/torfmaster/stepfunctor/commit/77d818b))
+- put repository url to individual package.json ([5523aac](https://github.com/torfmaster/stepfunctor/commit/5523aac))
+
+### ❤️ Thank You
+
+- Philipp Vollmer
+
 ## 0.0.3 (2026-05-08)
 
 ### 🩹 Fixes
