@@ -17,12 +17,20 @@ env:
 jobs:
   main:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout the main branch
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
 
       - uses: pnpm/action-setup@v6
         name: Install pnpm
@@ -45,3 +53,6 @@ jobs:
           git config --global user.name "torfmaster"
           pnpx nx release --skip-publish
           git push --follow-tags
+      - name: Run nx release publish
+        run: |
+          pnpx nx release publish
