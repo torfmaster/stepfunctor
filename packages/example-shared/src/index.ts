@@ -26,6 +26,3 @@ const loopSf = loopWhile(
 );
 
 export const sf = prepend('start', start, loopSf);
-
-// todo ifthenelse
-// switch
