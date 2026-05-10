@@ -1,3 +1,13 @@
+## 0.1.0 (2026-05-10)
+
+### 🚀 Features
+
+- add rudimentary snapshot tests ([6ecbe79](https://github.com/torfmaster/stepfunctor/commit/6ecbe79))
+
+### ❤️ Thank You
+
+- Philipp Vollmer
+
 ## 0.0.4 (2026-05-08)
 
 ### 🚀 Features
