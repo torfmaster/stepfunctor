@@ -1,3 +1,13 @@
+## 0.2.0 (2026-05-11)
+
+### 🚀 Features
+
+- improve docs ([255a54c](https://github.com/torfmaster/stepfunctor/commit/255a54c))
+
+### ❤️ Thank You
+
+- Philipp Vollmer
+
 ## 0.1.0 (2026-05-10)
 
 ### 🚀 Features
