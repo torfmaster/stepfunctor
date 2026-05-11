@@ -16,6 +16,22 @@ a Step Functors you might have encountered the following issues
   is no way to type the state
 - for the unexperienced user it is very likely that compiling code fails during deploy time
 
+This library attempts to provide you with a specialized strongly typed embedded domain specific languages that
+is executed in three different ways:
+
+- `stepfunctor-infra` executes the language to create AWS infrastructure
+- `stepfunctor-exec` creates commonjs bundles so your code is executed as an AWS lamdba
+- and `stepfunctor-exec` lets you just execute your step function locally for testing
+
+Apart from recursion it lets you define all sensible programs as step functions. Ideally, instead of
+developing in the cloud reduces development of step functions to
+
+- write the tests using AWS/nock mocks
+- make the tests green
+- fixup networking
+- add permissions mirroring the AWS mocks you set up
+- deploy
+
 ## Non-Goals
 
 - implement all step function features, in particular implement special steps that can be easily implemented as a
