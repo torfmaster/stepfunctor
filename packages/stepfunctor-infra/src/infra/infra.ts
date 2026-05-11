@@ -47,7 +47,7 @@ function buildLambda<IN, LS>(
     context.scope,
     `${fn.uniqueIdentifier}-lambda`,
     {
-      runtime: Runtime.NODEJS_22_X,
+      runtime: Runtime.NODEJS_24_X,
       handler: `${context.moduleName}.${fn.uniqueIdentifier}`,
       code: Code.fromAsset(context.artifactPath),
     },
@@ -137,9 +137,7 @@ function buildStepFunctionInner<I, LS>(
 
     const conditionChain = Chain.start(condition.lambdaInvoke);
     conditionChain.next(
-      // fixme generate id
       new Choice(context.scope, `${sf.id}-condition`)
-        // fixme map payload to match types
         .when(
           Condition.isPresent('$.Payload.output'),
           transformer.next(continuationStepFunction.chain),

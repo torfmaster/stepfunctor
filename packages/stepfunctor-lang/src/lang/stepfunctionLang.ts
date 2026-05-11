@@ -340,18 +340,16 @@ export function switchCase2<
 >(
   f: (i: FIN) => Promise<CASEIN & { characteristic: CASE1 | CASE2 }>,
   fnUniqueIdentifier: keyof LSF & string,
-  case1: StepFunction<CASEIN, LS1>,
-  case2: StepFunction<CASEIN, LS2>,
-  case1Name: CASE1,
-  case2Name: CASE2,
+  case1: Case<CASEIN, LS1, CASE1>,
+  case2: Case<CASEIN, LS2, CASE2>,
 ): StepFunction<FIN, LSF & LS1 & LS2> {
   const func = mkFunc(fnUniqueIdentifier, f);
   return mkSwitchCase2(
     func,
-    case1,
-    case2,
-    case1Name,
-    case2Name,
+    case1.case,
+    case2.case,
+    case1.name,
+    case2.name,
     fnUniqueIdentifier,
   );
 }
@@ -380,22 +378,19 @@ export function switchCase3<
 >(
   f: (i: FIN) => Promise<CASEIN & { characteristic: CASE1 | CASE2 }>,
   fnUniqueIdentifier: keyof LSF & string,
-  case1: StepFunction<CASEIN, LS1>,
-  case2: StepFunction<CASEIN, LS2>,
-  case3: StepFunction<CASEIN, LS3>,
-  case1Name: CASE1,
-  case2Name: CASE2,
-  case3Name: CASE3,
+  case1: Case<CASEIN, LS1, CASE1>,
+  case2: Case<CASEIN, LS2, CASE2>,
+  case3: Case<CASEIN, LS3, CASE3>,
 ): StepFunction<FIN, LSF & LS1 & LS2 & LS3> {
   const func = mkFunc(fnUniqueIdentifier, f);
   return mkSwitchCase3(
     func,
-    case1,
-    case2,
-    case3,
-    case1Name,
-    case2Name,
-    case3Name,
+    case1.case,
+    case2.case,
+    case3.case,
+    case1.name,
+    case2.name,
+    case3.name,
     fnUniqueIdentifier,
   );
 }
