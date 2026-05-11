@@ -1,7 +1,8 @@
 # Stepfunctor
 
 A typed, highly opinionated wrapper about the CDK AwS Step Functions that wants to make
-writing step functions as easy as Typescript functions.
+writing step functions as easy as Typescript functions. Find API documentation
+[here](https://torfmaster.github.io/stepfunctor/typedoc/).
 
 ## Goals
 

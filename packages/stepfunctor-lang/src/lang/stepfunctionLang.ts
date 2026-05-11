@@ -42,6 +42,7 @@ export function isFunc<I, LS>(
 ): input is Func<I, LS> {
   return isOfType(input, funcMarker);
 }
+
 function mkFunc<IN, OUT, LS>(
   uniqueIdentifier: keyof LS & string,
   inner: (i: IN) => Promise<OUT>,
@@ -245,8 +246,25 @@ export type StepFunction<I, LS> =
   | SwitchCase3<I, LS>
   | Final<I, LS>;
 
+/**
+ * Creates a single function as step function
+ *
+ * @param uniqueIdentifier - a globally unique
+ * @param inner - the function to execute
+ * @returns
+ */
 export const createFunction = mkFunc;
 
+/**
+ * Executes the provided function @param f and pass the input to the provided step function
+ * @param rest
+ *
+ * @param f - the function to execute
+ * @param fnUniqueIdentifier - a globally unique identifier for @param f
+ * @param rest - the step function to execute afterwards
+ * @returns the composed step function
+ *
+ */
 export function prepend<FIN, RESTIN, LSF, LSREST>(
   fnUniqueIdentifier: keyof LSF & string,
   f: (i: FIN) => Promise<RESTIN>,
@@ -257,6 +275,16 @@ export function prepend<FIN, RESTIN, LSF, LSREST>(
   return mkRest(func, rest, newLambdas);
 }
 
+/**
+ * Evaluates @param f and the based on the result passed to the "condition"
+ * field in the return value executes @param restTrue or @param restFalse
+ *
+ * @param f - the function to execute
+ * @param fnUniqueIdentifier - a globally unique identifier for @param f
+ * @param restTrue - step function to execute in case `condition` is "true"
+ * @param restFalse - step function to execute in case `condition` is "false"
+ * @returns the if/then/else step function
+ */
 export function ifThenElse<FIN, RESTIN, LSF, LS1, LS2>(
   f: (i: FIN) => Promise<RESTIN & { condition: boolean }>,
   fnUniqueIdentifier: keyof LSF & string,
@@ -267,6 +295,15 @@ export function ifThenElse<FIN, RESTIN, LSF, LS1, LS2>(
   return mkIfThenElse(func, restTrue, restFalse, fnUniqueIdentifier);
 }
 
+/**
+ * Loops the excution of @param f until a payload `output` is present
+ *
+ * @param f - the function to execute
+ * @param fnUniqueIdentifier - a globally unique identifier for @param f
+ * @param continuation the function to execute after the loop
+ * @param durationSeconds the pause between invocations of @param f
+ * @returns the loop step function
+ */
 export function loopWhile<FIN, CONTIN, LSF, LSC>(
   f: (i: FIN) => Promise<FIN & { output?: CONTIN }>,
   fnUniqueIdentifier: keyof LSF & string,
@@ -277,6 +314,21 @@ export function loopWhile<FIN, CONTIN, LSF, LSC>(
   return mkLoopWhile(func, continuation, durationSeconds, fnUniqueIdentifier);
 }
 
+export type Case<IN, LS, CHARACTERISTIC extends string> = {
+  case: StepFunction<IN, LS>;
+  name: CHARACTERISTIC;
+};
+
+/**
+ * Switch case over 2 cases
+ *
+ * @param f - the function to evaluate returns the case in the characteristic field
+ * @param fnUniqueIdentifier  - a globally unique indentifier for @param f returns
+ * the characteristic to choose in the characteristic field in the return value
+ * @param case1 - case 1
+ * @param case2 - case 2
+ * @returns - the step function
+ */
 export function switchCase2<
   FIN,
   LSF,
@@ -304,6 +356,17 @@ export function switchCase2<
   );
 }
 
+/**
+ * Switch case over 3 cases
+ *
+ * @param f - the function to evaluate returns the case in the characteristic field
+ * @param fnUniqueIdentifier  - a globally unique indentifier for @param f returns
+ * the characteristic to choose in the characteristic field in the return value
+ * @param case1 - case 1
+ * @param case2 - case 2
+ * @param case3 - case 3
+ * @returns - the step function
+ */
 export function switchCase3<
   FIN,
   LSF,

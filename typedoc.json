@@ -1,0 +1,7 @@
+{
+  "entryPoints": ["packages/stepfunctor-*"],
+  "name": "Stepfunctor",
+  "entryPointStrategy": "packages",
+  "includeVersion": false,
+  "out": "./public/typedoc"
+}
