@@ -1,3 +1,13 @@
+## 0.3.0 (2026-05-11)
+
+### 🚀 Features
+
+- improve switch case API ([78a6aeb](https://github.com/torfmaster/stepfunctor/commit/78a6aeb))
+
+### ❤️ Thank You
+
+- Philipp Vollmer
+
 ## 0.2.0 (2026-05-11)
 
 ### 🚀 Features
