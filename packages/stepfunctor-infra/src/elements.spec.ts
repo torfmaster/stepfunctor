@@ -69,10 +69,14 @@ describe('elements of the language', () => {
         return { characteristic: 'case2' };
       },
       'switchcase',
-      final('case1'),
-      final('case2'),
-      'case1',
-      'case2',
+      {
+        case: final('case1'),
+        name: 'case1',
+      },
+      {
+        case: final('case2'),
+        name: 'case2',
+      },
     );
     const stack = new TestStack(sf, new App());
 
@@ -87,12 +91,18 @@ describe('elements of the language', () => {
         return { characteristic: 'case2' };
       },
       'switchcase',
-      final('case1'),
-      final('case2'),
-      final('case3'),
-      'case1',
-      'case2',
-      'case3',
+      {
+        case: final('case1'),
+        name: 'case1',
+      },
+      {
+        case: final('case2'),
+        name: 'case2',
+      },
+      {
+        case: final('case3'),
+        name: 'case3',
+      },
     );
     const stack = new TestStack(sf, new App());
 
